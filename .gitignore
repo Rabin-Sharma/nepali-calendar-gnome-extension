@@ -1,0 +1,15 @@
+# Generated GSettings schema cache
+schemas/gschemas.compiled
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

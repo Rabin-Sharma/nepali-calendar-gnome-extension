@@ -15,12 +15,12 @@
 }
 
 .nepcal-header {
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     spacing: 10px;
 }
 
 .nepcal-title {
-    font-size: 1.2em;
+    font-size: 1.28em;
     font-weight: 700;
 }
 
@@ -38,24 +38,24 @@
 
 .nepcal-week-header {
     spacing: 0;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
 
 .nepcal-weekday-label {
-    font-size: 0.84em;
+    font-size: 0.9em;
     font-weight: 600;
     color: rgba(248, 250, 252, 0.86);
 }
 
 .nepcal-grid {
-    margin-bottom: 10px;
+    margin-bottom: 14px;
 }
 
 .nepcal-day-cell {
-    min-width: 44px;
-    min-height: 44px;
-    margin: 2px;
-    border-radius: 12px;
+    min-width: 58px;
+    min-height: 62px;
+    margin: 3px;
+    border-radius: 14px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(255, 255, 255, 0.03);
     color: #f8fafc;
@@ -70,20 +70,62 @@
 }
 
 .nepcal-bs-day {
-    font-size: 0.98em;
+    font-size: 1.03em;
     font-weight: 700;
 }
 
 .nepcal-ad-day {
-    font-size: 0.72em;
+    font-size: 0.74em;
     color: rgba(255, 255, 255, 0.62);
 }
 
+.nepcal-tithi-day {
+    font-size: 0.7em;
+    color: rgba(148, 163, 184, 0.95);
+    margin-top: 1px;
+}
+
 .nepcal-today-summary {
-    font-size: 0.92em;
+    font-size: 0.98em;
     font-weight: 600;
     color: rgba(248, 250, 252, 0.86);
-    margin-top: 4px;
+    margin-top: 8px;
+}
+
+.nepcal-jump-row {
+    spacing: 10px;
+    margin-bottom: 12px;
+}
+
+.nepcal-jump-picker {
+    spacing: 6px;
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.nepcal-jump-label {
+    font-size: 0.88em;
+    font-weight: 600;
+    color: rgba(248, 250, 252, 0.9);
+}
+
+.nepcal-jump-button {
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.nepcal-today-button {
+    min-width: 64px;
+    padding: 0 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(59, 130, 246, 0.5);
+    background: rgba(59, 130, 246, 0.2);
+    font-weight: 700;
 }
 
 .nepcal-saturday,

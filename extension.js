@@ -1,5 +1,6 @@
 import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
 import St from 'gi://St';
 
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -125,9 +126,36 @@ function toLocalizedNumber(value, useNepaliDigits, pad = 0) {
     return text.replace(/[0-9]/g, d => DEVANAGARI_DIGITS[Number(d)]);
 }
 
+function positiveModulo(value, mod) {
+    return ((value % mod) + mod) % mod;
+}
+
+// Approximate tithi from moon age. Lightweight and good for UI hints.
+function approximateTithiLabel(gregDate, useNepaliDigits) {
+    const synodicMonth = 29.53058867;
+    const knownNewMoonJd = 2451550.1; // 2000-01-06 reference new moon
+    const jd = gregDate.getTime() / MS_PER_DAY + 2440587.5;
+    const moonAge = positiveModulo(jd - knownNewMoonJd, synodicMonth);
+
+    let tithi = Math.floor(moonAge / (synodicMonth / 30)) + 1;
+    tithi = Math.max(1, Math.min(30, tithi));
+
+    const isShukla = tithi <= 15;
+    const tithiInPaksha = isShukla ? tithi : tithi - 15;
+    const tithiNumber = toLocalizedNumber(tithiInPaksha, useNepaliDigits);
+
+    return useNepaliDigits
+        ? `${isShukla ? 'शु' : 'कृ'} ${tithiNumber}`
+        : `${isShukla ? 'S' : 'K'} ${tithiNumber}`;
+}
+
 class NepaliCalendarIndicator extends PanelMenu.Button {
+    static {
+        GObject.registerClass(this);
+    }
+
     constructor(extension) {
-        super(0.0, 'NepaliCalendarIndicator', false);
+        super(0.0, 'NepaliCalendarIndicator');
 
         this._extension = extension;
         this._settings = extension.getSettings();
@@ -197,7 +225,8 @@ class NepaliCalendarIndicator extends PanelMenu.Button {
         this._panelLabel.style = `color: ${panelTextColor};`;
 
         this._updatePanelLabel();
-        this._renderCalendar();
+        if (this.menu.isOpen)
+            this._renderCalendar();
     }
 
     _updatePanelLabel() {
@@ -249,168 +278,275 @@ class NepaliCalendarIndicator extends PanelMenu.Button {
         this._renderCalendar();
     }
 
+    _setView(year, month) {
+        if (month < 1 || month > 12)
+            return;
+
+        const minYear = BS_YEAR_ZERO;
+        const maxYear = BS_YEAR_ZERO + ENCODED_MONTH_LENGTHS.length - 1;
+        if (year < minYear || year > maxYear)
+            return;
+
+        this._viewYear = year;
+        this._viewMonth = month;
+        this._renderCalendar();
+    }
+
+    _changeYear(delta) {
+        this._setView(this._viewYear + delta, this._viewMonth);
+    }
+
+    _jumpToToday() {
+        this._viewYear = this._todayBs.year;
+        this._viewMonth = this._todayBs.month;
+        this._renderCalendar();
+    }
+
     _clearMenuRoot() {
         for (const child of this._menuRoot.get_children())
             child.destroy();
     }
 
     _renderCalendar() {
-        this._clearMenuRoot();
+        try {
+            this._clearMenuRoot();
 
-        const useNepaliDigits = this._settings.get_boolean(SETTINGS_KEYS.useNepaliDigits);
-        const showGregorianHints = this._settings.get_boolean(SETTINGS_KEYS.showGregorianHints);
-        const accent = sanitizeColor(this._settings.get_string(SETTINGS_KEYS.accentColor), '#3b82f6');
-        const popupBackground = sanitizeColor(this._settings.get_string(SETTINGS_KEYS.popupBackground), '#111827');
+            const useNepaliDigits = this._settings.get_boolean(SETTINGS_KEYS.useNepaliDigits);
+            const showGregorianHints = this._settings.get_boolean(SETTINGS_KEYS.showGregorianHints);
+            const accent = sanitizeColor(this._settings.get_string(SETTINGS_KEYS.accentColor), '#3b82f6');
+            const popupBackground = sanitizeColor(this._settings.get_string(SETTINGS_KEYS.popupBackground), '#111827');
 
-        this._menuRoot.style = `background: ${popupBackground}; border-radius: 20px; padding: 16px; min-width: 360px;`;
+            this._menuRoot.style = `background: ${popupBackground}; border-radius: 20px; padding: 18px; min-width: 460px;`;
 
-        const header = new St.BoxLayout({
-            style_class: 'nepcal-header',
-            x_expand: true,
-        });
+            const header = new St.BoxLayout({
+                style_class: 'nepcal-header',
+                x_expand: true,
+            });
 
-        const prevButton = new St.Button({
-            style_class: 'nepcal-nav-button',
-            child: new St.Icon({icon_name: 'go-previous-symbolic'}),
-        });
-        prevButton.connect('clicked', () => this._changeMonth(-1));
+            const prevButton = new St.Button({
+                style_class: 'nepcal-nav-button',
+                child: new St.Icon({icon_name: 'go-previous-symbolic'}),
+            });
+            prevButton.connect('clicked', () => this._changeMonth(-1));
 
-        const title = new St.Label({
-            style_class: 'nepcal-title',
-            x_expand: true,
-            y_align: Clutter.ActorAlign.CENTER,
-            x_align: Clutter.ActorAlign.CENTER,
-        });
-        title.style = `color: ${accent};`;
+            const title = new St.Label({
+                style_class: 'nepcal-title',
+                x_expand: true,
+                y_align: Clutter.ActorAlign.CENTER,
+                x_align: Clutter.ActorAlign.CENTER,
+            });
+            title.style = `color: ${accent};`;
 
-        const monthName = useNepaliDigits ? BS_MONTHS_NE[this._viewMonth - 1] : BS_MONTHS_EN[this._viewMonth - 1];
-        const yearText = toLocalizedNumber(this._viewYear, useNepaliDigits);
-        title.text = `${monthName} ${yearText}`;
+            const monthName = useNepaliDigits ? BS_MONTHS_NE[this._viewMonth - 1] : BS_MONTHS_EN[this._viewMonth - 1];
+            const yearText = toLocalizedNumber(this._viewYear, useNepaliDigits);
+            title.text = `${monthName} ${yearText}`;
 
-        const nextButton = new St.Button({
-            style_class: 'nepcal-nav-button',
-            child: new St.Icon({icon_name: 'go-next-symbolic'}),
-        });
-        nextButton.connect('clicked', () => this._changeMonth(1));
+            const nextButton = new St.Button({
+                style_class: 'nepcal-nav-button',
+                child: new St.Icon({icon_name: 'go-next-symbolic'}),
+            });
+            nextButton.connect('clicked', () => this._changeMonth(1));
 
-        const minYear = BS_YEAR_ZERO;
-        const maxYear = BS_YEAR_ZERO + ENCODED_MONTH_LENGTHS.length - 1;
-        if (this._viewYear === minYear && this._viewMonth === 1)
-            prevButton.reactive = false;
-        if (this._viewYear === maxYear && this._viewMonth === 12)
-            nextButton.reactive = false;
+            const minYear = BS_YEAR_ZERO;
+            const maxYear = BS_YEAR_ZERO + ENCODED_MONTH_LENGTHS.length - 1;
+            if (this._viewYear === minYear && this._viewMonth === 1)
+                prevButton.reactive = false;
+            if (this._viewYear === maxYear && this._viewMonth === 12)
+                nextButton.reactive = false;
 
-        header.add_child(prevButton);
-        header.add_child(title);
-        header.add_child(nextButton);
-        this._menuRoot.add_child(header);
+            header.add_child(prevButton);
+            header.add_child(title);
+            header.add_child(nextButton);
+            this._menuRoot.add_child(header);
 
-        const weekHeader = new St.BoxLayout({
-            style_class: 'nepcal-week-header',
-            x_expand: true,
-        });
+            const jumpRow = new St.BoxLayout({
+                style_class: 'nepcal-jump-row',
+                x_expand: true,
+            });
 
-        const weekdays = useNepaliDigits ? WEEKDAYS_NE : WEEKDAYS_EN;
-        for (let i = 0; i < weekdays.length; i++) {
-            const label = new St.Label({
-                text: weekdays[i],
-                style_class: 'nepcal-weekday-label',
+            const yearPicker = new St.BoxLayout({
+                style_class: 'nepcal-jump-picker',
+                x_expand: true,
+            });
+            const yearDecButton = new St.Button({
+                style_class: 'nepcal-jump-button',
+                child: new St.Label({text: '-'}),
+            });
+            yearDecButton.connect('clicked', () => this._changeYear(-1));
+            const yearLabel = new St.Label({
+                text: useNepaliDigits
+                    ? `साल ${toLocalizedNumber(this._viewYear, true)}`
+                    : `Year ${toLocalizedNumber(this._viewYear, false)}`,
+                style_class: 'nepcal-jump-label',
                 x_expand: true,
                 x_align: Clutter.ActorAlign.CENTER,
             });
+            const yearIncButton = new St.Button({
+                style_class: 'nepcal-jump-button',
+                child: new St.Label({text: '+'}),
+            });
+            yearIncButton.connect('clicked', () => this._changeYear(1));
+            yearPicker.add_child(yearDecButton);
+            yearPicker.add_child(yearLabel);
+            yearPicker.add_child(yearIncButton);
+            if (this._viewYear <= minYear)
+                yearDecButton.reactive = false;
+            if (this._viewYear >= maxYear)
+                yearIncButton.reactive = false;
 
-            if (i === 6)
-                label.add_style_class_name('nepcal-saturday');
+            const monthPicker = new St.BoxLayout({
+                style_class: 'nepcal-jump-picker',
+                x_expand: true,
+            });
+            const monthDecButton = new St.Button({
+                style_class: 'nepcal-jump-button',
+                child: new St.Label({text: '-'}),
+            });
+            monthDecButton.connect('clicked', () => this._changeMonth(-1));
+            const monthLabel = new St.Label({
+                text: useNepaliDigits ? BS_MONTHS_NE[this._viewMonth - 1] : BS_MONTHS_EN[this._viewMonth - 1],
+                style_class: 'nepcal-jump-label',
+                x_expand: true,
+                x_align: Clutter.ActorAlign.CENTER,
+            });
+            const monthIncButton = new St.Button({
+                style_class: 'nepcal-jump-button',
+                child: new St.Label({text: '+'}),
+            });
+            monthIncButton.connect('clicked', () => this._changeMonth(1));
+            monthPicker.add_child(monthDecButton);
+            monthPicker.add_child(monthLabel);
+            monthPicker.add_child(monthIncButton);
 
-            weekHeader.add_child(label);
-        }
-        this._menuRoot.add_child(weekHeader);
+            const todayButton = new St.Button({
+                style_class: 'nepcal-today-button',
+                label: useNepaliDigits ? 'आज' : 'Today',
+            });
+            todayButton.connect('clicked', () => this._jumpToToday());
 
-        const monthDays = daysInBsMonth(this._viewYear, this._viewMonth);
-        const firstDayGreg = gregorianFromBs(this._viewYear, this._viewMonth, 1);
-        const firstDay = new Date(firstDayGreg.year, firstDayGreg.month - 1, firstDayGreg.day).getDay();
+            jumpRow.add_child(yearPicker);
+            jumpRow.add_child(monthPicker);
+            jumpRow.add_child(todayButton);
+            this._menuRoot.add_child(jumpRow);
 
-        const grid = new St.Widget({
-            layout_manager: new Clutter.GridLayout({
-                orientation: Clutter.Orientation.VERTICAL,
-                column_homogeneous: true,
-                row_homogeneous: true,
-            }),
-            style_class: 'nepcal-grid',
-            x_expand: true,
-        });
+            const weekHeader = new St.BoxLayout({
+                style_class: 'nepcal-week-header',
+                x_expand: true,
+            });
 
-        const gridLayout = grid.layout_manager;
-        let day = 1;
-
-        for (let row = 0; row < 6; row++) {
-            for (let col = 0; col < 7; col++) {
-                const cellIndex = row * 7 + col;
-                const inMonth = cellIndex >= firstDay && day <= monthDays;
-
-                if (!inMonth) {
-                    const placeholder = new St.Label({text: ' '});
-                    gridLayout.attach(placeholder, col, row, 1, 1);
-                    continue;
-                }
-
-                const button = new St.Button({
-                    style_class: 'nepcal-day-cell',
-                    reactive: false,
-                });
-
-                const content = new St.BoxLayout({
-                    vertical: true,
+            const weekdays = useNepaliDigits ? WEEKDAYS_NE : WEEKDAYS_EN;
+            for (let i = 0; i < weekdays.length; i++) {
+                const label = new St.Label({
+                    text: weekdays[i],
+                    style_class: 'nepcal-weekday-label',
+                    x_expand: true,
                     x_align: Clutter.ActorAlign.CENTER,
-                    y_align: Clutter.ActorAlign.CENTER,
                 });
 
-                const bsLabel = new St.Label({
-                    text: toLocalizedNumber(day, useNepaliDigits),
-                    style_class: 'nepcal-bs-day',
-                    x_align: Clutter.ActorAlign.CENTER,
-                });
+                if (i === 6)
+                    label.add_style_class_name('nepcal-saturday');
 
-                content.add_child(bsLabel);
+                weekHeader.add_child(label);
+            }
+            this._menuRoot.add_child(weekHeader);
 
-                if (showGregorianHints) {
-                    const g = gregorianFromBs(this._viewYear, this._viewMonth, day);
-                    const adLabel = new St.Label({
-                        text: `${g.day}`,
-                        style_class: 'nepcal-ad-day',
+            const monthDays = daysInBsMonth(this._viewYear, this._viewMonth);
+            const firstDayGreg = gregorianFromBs(this._viewYear, this._viewMonth, 1);
+            const firstDay = new Date(firstDayGreg.year, firstDayGreg.month - 1, firstDayGreg.day).getDay();
+
+            const grid = new St.Widget({
+                layout_manager: new Clutter.GridLayout({
+                    orientation: Clutter.Orientation.VERTICAL,
+                    column_homogeneous: true,
+                    row_homogeneous: true,
+                }),
+                style_class: 'nepcal-grid',
+                x_expand: true,
+            });
+
+            const gridLayout = grid.layout_manager;
+            let day = 1;
+
+            for (let row = 0; row < 6; row++) {
+                for (let col = 0; col < 7; col++) {
+                    const cellIndex = row * 7 + col;
+                    const inMonth = cellIndex >= firstDay && day <= monthDays;
+
+                    if (!inMonth) {
+                        const placeholder = new St.Label({text: ' '});
+                        gridLayout.attach(placeholder, col, row, 1, 1);
+                        continue;
+                    }
+
+                    const button = new St.Button({
+                        style_class: 'nepcal-day-cell',
+                        reactive: false,
+                    });
+
+                    const content = new St.BoxLayout({
+                        vertical: true,
+                        x_align: Clutter.ActorAlign.CENTER,
+                        y_align: Clutter.ActorAlign.CENTER,
+                    });
+
+                    const bsLabel = new St.Label({
+                        text: toLocalizedNumber(day, useNepaliDigits),
+                        style_class: 'nepcal-bs-day',
                         x_align: Clutter.ActorAlign.CENTER,
                     });
-                    content.add_child(adLabel);
+
+                    content.add_child(bsLabel);
+
+                    const gDate = gregorianFromBs(this._viewYear, this._viewMonth, day);
+
+                    if (showGregorianHints) {
+                        const adLabel = new St.Label({
+                            text: toLocalizedNumber(gDate.day, useNepaliDigits),
+                            style_class: 'nepcal-ad-day',
+                            x_align: Clutter.ActorAlign.CENTER,
+                        });
+                        content.add_child(adLabel);
+                    }
+
+                    const gregDate = new Date(gDate.year, gDate.month - 1, gDate.day, 12, 0, 0);
+                    const tithiLabel = new St.Label({
+                        text: approximateTithiLabel(gregDate, useNepaliDigits),
+                        style_class: 'nepcal-tithi-day',
+                        x_align: Clutter.ActorAlign.CENTER,
+                    });
+                    content.add_child(tithiLabel);
+
+                    button.set_child(content);
+
+                    if (this._viewYear === this._todayBs.year &&
+                        this._viewMonth === this._todayBs.month &&
+                        day === this._todayBs.day) {
+                        button.add_style_class_name('nepcal-day-today');
+                        button.style = `background: ${accent};`;
+                    }
+
+                    if (col === 6)
+                        button.add_style_class_name('nepcal-saturday-cell');
+
+                    gridLayout.attach(button, col, row, 1, 1);
+                    day++;
                 }
-
-                button.set_child(content);
-
-                if (this._viewYear === this._todayBs.year &&
-                    this._viewMonth === this._todayBs.month &&
-                    day === this._todayBs.day) {
-                    button.add_style_class_name('nepcal-day-today');
-                    button.style = `background: ${accent};`;
-                }
-
-                if (col === 6)
-                    button.add_style_class_name('nepcal-saturday-cell');
-
-                gridLayout.attach(button, col, row, 1, 1);
-                day++;
             }
+
+            this._menuRoot.add_child(grid);
+
+            const todayRow = new St.Label({
+                style_class: 'nepcal-today-summary',
+                x_align: Clutter.ActorAlign.CENTER,
+                x_expand: true,
+            });
+
+            const todayMonth = useNepaliDigits ? BS_MONTHS_NE[this._todayBs.month - 1] : BS_MONTHS_EN[this._todayBs.month - 1];
+            todayRow.text = `Today: ${toLocalizedNumber(this._todayBs.day, useNepaliDigits)} ${todayMonth} ${toLocalizedNumber(this._todayBs.year, useNepaliDigits)} BS`;
+            this._menuRoot.add_child(todayRow);
+        } catch (error) {
+            logError(error, 'Nepali Calendar popup render failed');
         }
-
-        this._menuRoot.add_child(grid);
-
-        const todayRow = new St.Label({
-            style_class: 'nepcal-today-summary',
-            x_align: Clutter.ActorAlign.CENTER,
-            x_expand: true,
-        });
-
-        const todayMonth = useNepaliDigits ? BS_MONTHS_NE[this._todayBs.month - 1] : BS_MONTHS_EN[this._todayBs.month - 1];
-        todayRow.text = `Today: ${toLocalizedNumber(this._todayBs.day, useNepaliDigits)} ${todayMonth} ${toLocalizedNumber(this._todayBs.year, useNepaliDigits)} BS`;
-        this._menuRoot.add_child(todayRow);
     }
 
     destroy() {
@@ -429,8 +565,12 @@ class NepaliCalendarIndicator extends PanelMenu.Button {
 
 export default class NepaliCalendarExtension extends Extension {
     enable() {
-        this._indicator = new NepaliCalendarIndicator(this);
-        Main.panel.addToStatusArea('nepali-calendar', this._indicator, 1, 'center');
+        try {
+            this._indicator = new NepaliCalendarIndicator(this);
+            Main.panel.addToStatusArea('nepali-calendar', this._indicator, 0, 'center');
+        } catch (error) {
+            logError(error, 'Nepali Calendar failed to enable');
+        }
     }
 
     disable() {

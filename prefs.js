@@ -30,7 +30,7 @@ export default class NepaliCalendarPreferences extends ExtensionPreferences {
         window.add(page);
 
         const formatGroup = new Adw.PreferencesGroup({
-            title: 'Date & Language',
+            title: 'Date and Language',
             description: 'Customize BS date format shown in the top panel and popup.',
         });
         page.add(formatGroup);
