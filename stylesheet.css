@@ -52,8 +52,8 @@
 }
 
 .nepcal-day-cell {
-    min-width: 58px;
-    min-height: 62px;
+    min-width: 66px;
+    min-height: 66px;
     margin: 3px;
     border-radius: 14px;
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -77,12 +77,6 @@
 .nepcal-ad-day {
     font-size: 0.74em;
     color: rgba(255, 255, 255, 0.62);
-}
-
-.nepcal-tithi-day {
-    font-size: 0.7em;
-    color: rgba(148, 163, 184, 0.95);
-    margin-top: 1px;
 }
 
 .nepcal-today-summary {

@@ -8,6 +8,10 @@ const SETTINGS_KEYS = {
     dateFormat: 'date-format',
     useNepaliDigits: 'use-nepali-digits',
     accentColor: 'accent-color',
+    todayBorderColor: 'today-border-color',
+    todayFillColor: 'today-fill-color',
+    todayTextColor: 'today-text-color',
+    todayHighlightStyle: 'today-highlight-style',
     panelTextColor: 'panel-text-color',
     popupBackground: 'popup-background',
     showGregorianHints: 'show-gregorian-hints',
@@ -17,6 +21,12 @@ const DATE_FORMATS = [
     ['long', 'Long (27 Baishakh 2083)'],
     ['compact', 'Compact (27 Baishakh)'],
     ['numeric', 'Numeric (2083-01-27 BS)'],
+];
+
+const TODAY_HIGHLIGHT_STYLES = [
+    ['border', 'Border Only'],
+    ['fill', 'Fill Only'],
+    ['both', 'Border and Fill'],
 ];
 
 export default class NepaliCalendarPreferences extends ExtensionPreferences {
@@ -78,6 +88,16 @@ export default class NepaliCalendarPreferences extends ExtensionPreferences {
 
         styleGroup.add(this._buildColorRow(settings, SETTINGS_KEYS.accentColor,
             'Accent Color', 'Used for highlight and month title.'));
+        styleGroup.add(this._buildDropdownRow(settings,
+            SETTINGS_KEYS.todayHighlightStyle,
+            TODAY_HIGHLIGHT_STYLES,
+            'Today Highlight Style'));
+        styleGroup.add(this._buildColorRow(settings, SETTINGS_KEYS.todayBorderColor,
+            'Today Border Color', 'Border color for today\'s BS date cell.'));
+        styleGroup.add(this._buildColorRow(settings, SETTINGS_KEYS.todayFillColor,
+            'Today Fill Color', 'Fill color when today style includes fill.'));
+        styleGroup.add(this._buildColorRow(settings, SETTINGS_KEYS.todayTextColor,
+            'Today Text Color', 'Text color for today\'s BS date cell.'));
         styleGroup.add(this._buildColorRow(settings, SETTINGS_KEYS.panelTextColor,
             'Panel Text Color', 'Color for the top bar BS date label.'));
         styleGroup.add(this._buildColorRow(settings, SETTINGS_KEYS.popupBackground,
@@ -111,6 +131,33 @@ export default class NepaliCalendarPreferences extends ExtensionPreferences {
 
         row.add_suffix(entry);
         row.activatable_widget = entry;
+        return row;
+    }
+
+    _buildDropdownRow(settings, key, options, title) {
+        const row = new Adw.ActionRow({title});
+        const model = Gtk.StringList.new(options.map(([, label]) => label));
+        const dropdown = new Gtk.DropDown({model});
+        dropdown.valign = Gtk.Align.CENTER;
+
+        const currentValue = settings.get_string(key);
+        const initialIndex = Math.max(0, options.findIndex(([value]) => value === currentValue));
+        dropdown.set_selected(initialIndex);
+
+        dropdown.connect('notify::selected-item', () => {
+            const idx = dropdown.get_selected();
+            settings.set_string(key, options[idx][0]);
+        });
+
+        settings.connect(`changed::${key}`, () => {
+            const value = settings.get_string(key);
+            const index = options.findIndex(([v]) => v === value);
+            if (index >= 0 && dropdown.get_selected() !== index)
+                dropdown.set_selected(index);
+        });
+
+        row.add_suffix(dropdown);
+        row.activatable_widget = dropdown;
         return row;
     }
 }

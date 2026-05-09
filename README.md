@@ -9,7 +9,6 @@ Professional Bikram Sambat (BS) calendar extension for GNOME Shell 46.
 - Today quick jump button
 - Bigger modal and bigger day cells
 - Optional Gregorian day hints
-- Tithi label on each day (approximate astronomical calculation)
 - Preferences for date format and colors
 
 ## Requirements
@@ -60,4 +59,3 @@ journalctl -f -o cat /usr/bin/gjs
 
 ## Notes
 - Run `glib-compile-schemas schemas` only when schema XML changes.
-- Tithi currently uses an approximation suitable for UI display.

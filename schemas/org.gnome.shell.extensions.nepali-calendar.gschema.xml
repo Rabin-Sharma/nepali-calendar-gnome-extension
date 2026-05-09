@@ -19,6 +19,30 @@
       <description>Highlight color used in popup title and current day cell.</description>
     </key>
 
+    <key name="today-border-color" type="s">
+      <default>'#22c55e'</default>
+      <summary>Today border color</summary>
+      <description>Border color used for highlighting the current BS date cell.</description>
+    </key>
+
+    <key name="today-fill-color" type="s">
+      <default>'#1d4ed8'</default>
+      <summary>Today fill color</summary>
+      <description>Fill color used when today highlight style includes cell fill.</description>
+    </key>
+
+    <key name="today-text-color" type="s">
+      <default>'#f8fafc'</default>
+      <summary>Today text color</summary>
+      <description>Text color used inside today's highlighted BS cell.</description>
+    </key>
+
+    <key name="today-highlight-style" type="s">
+      <default>'border'</default>
+      <summary>Today highlight style</summary>
+      <description>Highlight style for current BS date cell: border, fill, or both.</description>
+    </key>
+
     <key name="panel-text-color" type="s">
       <default>'#f8fafc'</default>
       <summary>Panel text color</summary>

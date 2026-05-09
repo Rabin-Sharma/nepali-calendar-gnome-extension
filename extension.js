@@ -41,6 +41,10 @@ const SETTINGS_KEYS = {
     dateFormat: 'date-format',
     useNepaliDigits: 'use-nepali-digits',
     accentColor: 'accent-color',
+    todayBorderColor: 'today-border-color',
+    todayFillColor: 'today-fill-color',
+    todayTextColor: 'today-text-color',
+    todayHighlightStyle: 'today-highlight-style',
     panelTextColor: 'panel-text-color',
     popupBackground: 'popup-background',
     showGregorianHints: 'show-gregorian-hints',
@@ -126,27 +130,9 @@ function toLocalizedNumber(value, useNepaliDigits, pad = 0) {
     return text.replace(/[0-9]/g, d => DEVANAGARI_DIGITS[Number(d)]);
 }
 
-function positiveModulo(value, mod) {
-    return ((value % mod) + mod) % mod;
-}
-
-// Approximate tithi from moon age. Lightweight and good for UI hints.
-function approximateTithiLabel(gregDate, useNepaliDigits) {
-    const synodicMonth = 29.53058867;
-    const knownNewMoonJd = 2451550.1; // 2000-01-06 reference new moon
-    const jd = gregDate.getTime() / MS_PER_DAY + 2440587.5;
-    const moonAge = positiveModulo(jd - knownNewMoonJd, synodicMonth);
-
-    let tithi = Math.floor(moonAge / (synodicMonth / 30)) + 1;
-    tithi = Math.max(1, Math.min(30, tithi));
-
-    const isShukla = tithi <= 15;
-    const tithiInPaksha = isShukla ? tithi : tithi - 15;
-    const tithiNumber = toLocalizedNumber(tithiInPaksha, useNepaliDigits);
-
-    return useNepaliDigits
-        ? `${isShukla ? 'शु' : 'कृ'} ${tithiNumber}`
-        : `${isShukla ? 'S' : 'K'} ${tithiNumber}`;
+function sanitizeTodayHighlightStyle(input) {
+    const value = typeof input === 'string' ? input.trim() : '';
+    return ['border', 'fill', 'both'].includes(value) ? value : 'border';
 }
 
 class NepaliCalendarIndicator extends PanelMenu.Button {
@@ -197,6 +183,10 @@ class NepaliCalendarIndicator extends PanelMenu.Button {
         this._settingsSignals.push(this._settings.connect(`changed::${SETTINGS_KEYS.dateFormat}`, () => this._syncVisuals()));
         this._settingsSignals.push(this._settings.connect(`changed::${SETTINGS_KEYS.useNepaliDigits}`, () => this._syncVisuals()));
         this._settingsSignals.push(this._settings.connect(`changed::${SETTINGS_KEYS.accentColor}`, () => this._syncVisuals()));
+        this._settingsSignals.push(this._settings.connect(`changed::${SETTINGS_KEYS.todayBorderColor}`, () => this._syncVisuals()));
+        this._settingsSignals.push(this._settings.connect(`changed::${SETTINGS_KEYS.todayFillColor}`, () => this._syncVisuals()));
+        this._settingsSignals.push(this._settings.connect(`changed::${SETTINGS_KEYS.todayTextColor}`, () => this._syncVisuals()));
+        this._settingsSignals.push(this._settings.connect(`changed::${SETTINGS_KEYS.todayHighlightStyle}`, () => this._syncVisuals()));
         this._settingsSignals.push(this._settings.connect(`changed::${SETTINGS_KEYS.panelTextColor}`, () => this._syncVisuals()));
         this._settingsSignals.push(this._settings.connect(`changed::${SETTINGS_KEYS.popupBackground}`, () => this._syncVisuals()));
         this._settingsSignals.push(this._settings.connect(`changed::${SETTINGS_KEYS.showGregorianHints}`, () => this._syncVisuals()));
@@ -314,9 +304,13 @@ class NepaliCalendarIndicator extends PanelMenu.Button {
             const useNepaliDigits = this._settings.get_boolean(SETTINGS_KEYS.useNepaliDigits);
             const showGregorianHints = this._settings.get_boolean(SETTINGS_KEYS.showGregorianHints);
             const accent = sanitizeColor(this._settings.get_string(SETTINGS_KEYS.accentColor), '#3b82f6');
+            const todayBorderColor = sanitizeColor(this._settings.get_string(SETTINGS_KEYS.todayBorderColor), accent);
+            const todayFillColor = sanitizeColor(this._settings.get_string(SETTINGS_KEYS.todayFillColor), '#1d4ed8');
+            const todayTextColor = sanitizeColor(this._settings.get_string(SETTINGS_KEYS.todayTextColor), '#f8fafc');
+            const todayHighlightStyle = sanitizeTodayHighlightStyle(this._settings.get_string(SETTINGS_KEYS.todayHighlightStyle));
             const popupBackground = sanitizeColor(this._settings.get_string(SETTINGS_KEYS.popupBackground), '#111827');
 
-            this._menuRoot.style = `background: ${popupBackground}; border-radius: 20px; padding: 18px; min-width: 460px;`;
+            this._menuRoot.style = `background: ${popupBackground}; border-radius: 20px; padding: 18px; min-width: 560px;`;
 
             const header = new St.BoxLayout({
                 style_class: 'nepcal-header',
@@ -508,21 +502,19 @@ class NepaliCalendarIndicator extends PanelMenu.Button {
                         content.add_child(adLabel);
                     }
 
-                    const gregDate = new Date(gDate.year, gDate.month - 1, gDate.day, 12, 0, 0);
-                    const tithiLabel = new St.Label({
-                        text: approximateTithiLabel(gregDate, useNepaliDigits),
-                        style_class: 'nepcal-tithi-day',
-                        x_align: Clutter.ActorAlign.CENTER,
-                    });
-                    content.add_child(tithiLabel);
-
                     button.set_child(content);
 
                     if (this._viewYear === this._todayBs.year &&
                         this._viewMonth === this._todayBs.month &&
                         day === this._todayBs.day) {
                         button.add_style_class_name('nepcal-day-today');
-                        button.style = `background: ${accent};`;
+                        if (todayHighlightStyle === 'fill') {
+                            button.style = `border: 1px solid ${todayFillColor}; background: ${todayFillColor}; color: ${todayTextColor};`;
+                        } else if (todayHighlightStyle === 'both') {
+                            button.style = `border: 2px solid ${todayBorderColor}; background: ${todayFillColor}; color: ${todayTextColor};`;
+                        } else {
+                            button.style = `border: 2px solid ${todayBorderColor}; background: rgba(0, 0, 0, 0.0); color: ${todayTextColor};`;
+                        }
                     }
 
                     if (col === 6)
