@@ -147,6 +147,7 @@ class NepaliCalendarIndicator extends PanelMenu.Button {
         this._settings = extension.getSettings();
 
         this._refreshTimerId = null;
+        this._menuOpenChangedId = null;
         this._settingsSignals = [];
 
         this._todayBs = bsFromDate(new Date());
@@ -175,7 +176,7 @@ class NepaliCalendarIndicator extends PanelMenu.Button {
         this._menuRootItem.add_child(this._menuRoot);
         this.menu.addMenuItem(this._menuRootItem);
 
-        this.menu.connect('open-state-changed', (_menu, isOpen) => {
+        this._menuOpenChangedId = this.menu.connect('open-state-changed', (_menu, isOpen) => {
             if (isOpen)
                 this._renderCalendar();
         });
@@ -545,6 +546,11 @@ class NepaliCalendarIndicator extends PanelMenu.Button {
         if (this._refreshTimerId) {
             GLib.source_remove(this._refreshTimerId);
             this._refreshTimerId = null;
+        }
+
+        if (this._menuOpenChangedId) {
+            this.menu.disconnect(this._menuOpenChangedId);
+            this._menuOpenChangedId = null;
         }
 
         for (const id of this._settingsSignals)

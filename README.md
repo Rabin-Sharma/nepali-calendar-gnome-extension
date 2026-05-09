@@ -13,35 +13,37 @@ Professional Bikram Sambat (BS) calendar extension for GNOME Shell 46.
 
 ## Requirements
 - GNOME Shell 46 (also compatible with 45 per metadata)
-- Extension folder UUID: `nepali-calendar@rabin`
+- Extension folder UUID: `nepali-calendar@rabin-sharma`
 
 ## Install / Update
 Place this directory at:
 
-`~/.local/share/gnome-shell/extensions/nepali-calendar@rabin`
+`~/.local/share/gnome-shell/extensions/nepali-calendar@rabin-sharma`
 
-If you changed schema XML, compile schemas:
+If you changed schema XML during local testing, you may compile schemas:
 
 ```bash
-cd ~/.local/share/gnome-shell/extensions/nepali-calendar@rabin
+cd ~/.local/share/gnome-shell/extensions/nepali-calendar@rabin-sharma
 glib-compile-schemas schemas
 ```
+
+For GNOME 45+ publishing, do **not** ship `schemas/gschemas.compiled` in the zip.
 
 Enable extension:
 
 ```bash
-gnome-extensions enable nepali-calendar@rabin
+gnome-extensions enable nepali-calendar@rabin-sharma
 ```
 
 ## Reload During Development
 ```bash
-gnome-extensions disable nepali-calendar@rabin
-gnome-extensions enable nepali-calendar@rabin
+gnome-extensions disable nepali-calendar@rabin-sharma
+gnome-extensions enable nepali-calendar@rabin-sharma
 ```
 
 ## Open Preferences
 ```bash
-gnome-extensions prefs nepali-calendar@rabin
+gnome-extensions prefs nepali-calendar@rabin-sharma
 ```
 
 ## Troubleshooting
