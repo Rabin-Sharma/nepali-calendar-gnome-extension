@@ -1,0 +1,92 @@
+.nepcal-panel-label {
+    font-size: 0.95em;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    padding: 0 8px;
+}
+
+.nepcal-menu-item {
+    padding: 0;
+}
+
+.nepcal-menu-root {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+}
+
+.nepcal-header {
+    margin-bottom: 8px;
+    spacing: 10px;
+}
+
+.nepcal-title {
+    font-size: 1.2em;
+    font-weight: 700;
+}
+
+.nepcal-nav-button {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.nepcal-nav-button:hover {
+    background: rgba(255, 255, 255, 0.16);
+}
+
+.nepcal-week-header {
+    spacing: 0;
+    margin-bottom: 8px;
+}
+
+.nepcal-weekday-label {
+    font-size: 0.84em;
+    font-weight: 600;
+    color: rgba(248, 250, 252, 0.86);
+}
+
+.nepcal-grid {
+    margin-bottom: 10px;
+}
+
+.nepcal-day-cell {
+    min-width: 44px;
+    min-height: 44px;
+    margin: 2px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    color: #f8fafc;
+}
+
+.nepcal-day-cell:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.nepcal-day-today {
+    border-color: rgba(255, 255, 255, 0.35);
+}
+
+.nepcal-bs-day {
+    font-size: 0.98em;
+    font-weight: 700;
+}
+
+.nepcal-ad-day {
+    font-size: 0.72em;
+    color: rgba(255, 255, 255, 0.62);
+}
+
+.nepcal-today-summary {
+    font-size: 0.92em;
+    font-weight: 600;
+    color: rgba(248, 250, 252, 0.86);
+    margin-top: 4px;
+}
+
+.nepcal-saturday,
+.nepcal-saturday-cell .nepcal-bs-day {
+    color: #fb7185;
+}

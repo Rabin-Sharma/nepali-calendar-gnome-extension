@@ -1,0 +1,8 @@
+{
+  "uuid": "nepali-calendar@rabin",
+  "name": "Nepali Calendar",
+  "description": "Professional Bikram Sambat calendar for GNOME top bar with monthly popup and customization.",
+  "version": 2,
+  "shell-version": ["45", "46"],
+  "settings-schema": "org.gnome.shell.extensions.nepali-calendar"
+}

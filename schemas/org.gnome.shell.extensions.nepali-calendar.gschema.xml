@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.nepali-calendar" path="/org/gnome/shell/extensions/nepali-calendar/">
+    <key name="date-format" type="s">
+      <default>'long'</default>
+      <summary>Panel date format</summary>
+      <description>Display format for BS date in the top panel: long, compact, or numeric.</description>
+    </key>
+
+    <key name="use-nepali-digits" type="b">
+      <default>true</default>
+      <summary>Use Devanagari digits</summary>
+      <description>Whether to render numeric values using Nepali digits.</description>
+    </key>
+
+    <key name="accent-color" type="s">
+      <default>'#3b82f6'</default>
+      <summary>Accent color</summary>
+      <description>Highlight color used in popup title and current day cell.</description>
+    </key>
+
+    <key name="panel-text-color" type="s">
+      <default>'#f8fafc'</default>
+      <summary>Panel text color</summary>
+      <description>Text color for the BS date indicator in the top panel.</description>
+    </key>
+
+    <key name="popup-background" type="s">
+      <default>'#111827'</default>
+      <summary>Popup background color</summary>
+      <description>Background color for the calendar popup container.</description>
+    </key>
+
+    <key name="show-gregorian-hints" type="b">
+      <default>true</default>
+      <summary>Show Gregorian hints</summary>
+      <description>Show small Gregorian day numbers in each BS date cell.</description>
+    </key>
+  </schema>
+</schemalist>
